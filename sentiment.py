@@ -61,7 +61,6 @@ for folder in folders:
 df = pd.DataFrame(messages)
 # remove any insubstantial messages
 df = df[df["message"].str.len() > 10]
-print(df.shape[0])
 
 '''
 Moving onto Sentiment Analysis
@@ -89,6 +88,8 @@ def classify(message : str) -> float:
     return 0
 
 df["score"] = df["message"].apply(classify)
+print(df.shape[0])
+print(df.columns)
 
 '''
 Start Aggregating by month
