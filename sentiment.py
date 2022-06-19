@@ -61,6 +61,7 @@ for folder in folders:
 df = pd.DataFrame(messages)
 # remove any insubstantial messages
 df = df[df["message"].str.len() > 10]
+print(df.shape[0])
 
 '''
 Moving onto Sentiment Analysis
