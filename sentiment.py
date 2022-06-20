@@ -1,5 +1,7 @@
 '''
 Possibly the quickest and dirtiest sentiment analysis of all time
+
+To be run on data as of 19 JUN 2022
 '''
 
 import json
@@ -115,7 +117,13 @@ plot it
 import matplotlib.pyplot as plt
 
 print(df.columns)
-df.plot(kind="bar", x="date", y=["neg", "pos"]).get_figure().savefig('output.png')
+df["neu"] = 1 - df["pos"] - df["neg"]
+colour_dict = {
+    "pos": "g",
+    "neu": "gray",
+    "neg": "r"
+}
+df.plot(kind="bar", color=colour_dict, stacked=True, x="date", y=["pos", "neu", "neg"]).get_figure().savefig('output.png')
 
 '''
 participants ranked
