@@ -76,18 +76,16 @@ nltk.download([
 
 SID = SentimentIntensityAnalyzer()
 
-def classify(message : str) -> float:
-    '''
-    1 for negative
-    0 for all else
-    '''
+def classify(row) -> float:
+    message = row["message"]
     ss = SID.polarity_scores(message)
     score = ss["compound"]
-    if score < 0:
-        return 1
-    return 0
+    neg = 1 if score < 0 else 0
+    pos = 1 if score > 0 else 0
+    return neg, pos
 
-df["score"] = df["message"].apply(classify)
+df[["neg", "pos"]] = df.apply(classify, axis=1, result_type="expand")
+df_messages = df.copy()
 print(df.shape[0])
 print(df.columns)
 
@@ -98,9 +96,15 @@ df["date"] = pd.to_datetime(df["unix"], unit="ms")
 df.drop(columns=["unix", "message", "participants"], inplace=True)
 print(df.columns)
 
-df = df.groupby(pd.Grouper(freq="Y", key="date")).agg(count=("score", "count"), sum=("score", "sum"))
-df["percentage"] = df["sum"] / df["count"]
-df.drop(columns=["sum", "count"], inplace=True)
+df = df.groupby(pd.Grouper(freq="Y", key="date")).agg(
+    neg_count=("neg", "count"), 
+    neg_sum=("neg", "sum"),
+    pos_count=("pos", "count"), 
+    pos_sum=("pos", "sum"),
+)
+df["neg"] = df["neg_sum"] / df["neg_count"]
+df["pos"] = df["pos_sum"] / df["pos_count"]
+df.drop(columns=["neg_sum", "pos_sum", "neg_count", "pos_count"], inplace=True)
 df["date"] = df.index
 df["date"] = df["date"].dt.to_period('Y')
 # df.set_axis(["date", "percentage"], axis=1, inplace=True)
@@ -111,4 +115,23 @@ plot it
 import matplotlib.pyplot as plt
 
 print(df.columns)
-df.plot(kind="bar", x="date", y="percentage").get_figure().savefig('output.png')
+df.plot(kind="bar", x="date", y=["neg", "pos"]).get_figure().savefig('output.png')
+
+'''
+participants ranked
+'''
+
+df = df_messages.groupby(by="participants").agg(
+    count=("pos", "count"),
+    pos=("pos", "mean"),
+    neg=("neg", "mean")
+)
+# df["participants"] = df.index
+df = df[df["count"] > 100]
+df = df[~df.index.str.contains(",")]
+df = df.sort_values(by="neg", ascending=False)
+print(df)
+df = df.sort_values(by="pos", ascending=False)
+print(df)
+df = df.sort_values(by="count", ascending=False)
+print(df)
